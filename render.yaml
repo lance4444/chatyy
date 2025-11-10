@@ -3,10 +3,20 @@ services:
     name: chatty-app
     env: node
     buildCommand: |
+      # Install root dependencies
       npm install
-      cd frontend && npm install && cd ..
+      
+      # Install frontend dependencies including Vite as dev dependency
+      cd frontend && npm install --include=dev && cd ..
+      
+      # Install backend dependencies
       cd backend && npm install && cd ..
-      npm run build
+      
+      # Build the frontend
+      cd frontend && npx vite build && cd ..
+      
+      # Install production dependencies for the backend
+      cd backend && npm ci --only=production && cd ..
     startCommand: npm start
     envVars:
       - key: NODE_ENV
