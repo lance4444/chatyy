@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: chatty-app
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        fromDatabase:
+          name: chatty-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
