@@ -22,6 +22,13 @@ const Navbar = () => {
               <h1 className="text-lg font-bold">Chatty</h1>
             </Link>
           </div>
+          <div className="flex flex-1 justify-center">
+            <div className="text-center text-sm sm:text-base font-semibold">
+              <span>Leung Chi</span>
+              <span className="mx-2">•</span>
+              <span>Student ID: 230313584</span>
+            </div>
+          </div>
           <div className="flex items-center gap-2">
             <Link
               to={"/settings"}
