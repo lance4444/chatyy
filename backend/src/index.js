@@ -26,30 +26,74 @@ app.use("/api/messages", messageRoutes);
 
 // In production, serve static files from the frontend/dist directory
 if (process.env.NODE_ENV === "production") {
-  // Try multiple possible locations for the frontend files
+  // Define all possible locations where frontend files might be
   const possiblePaths = [
-    path.join(__dirname, "..", "public"),       // For new build location
-    path.join(__dirname, "..", "..", "frontend", "dist"),  // Old location
-    "/opt/render/frontend/dist"                  // Render's expected location
+    path.join(__dirname, "..", "public"),
+    path.join(__dirname, "..", "..", "frontend", "dist"),
+    "/opt/render/frontend/dist",
+    "/opt/render/project/backend/public"
   ];
 
-  // Find the first path that exists
-  const frontendPath = possiblePaths.find(p => {
+  console.log("=== Checking for frontend files in the following locations ===");
+  
+  // Check each path and log its existence
+  const pathChecks = possiblePaths.map(p => {
     try {
-      return fs.existsSync(p);
+      const exists = fs.existsSync(p);
+      console.log(`- ${p}: ${exists ? '✅ Found' : '❌ Not found'}`);
+      if (exists) {
+        console.log(`  Contents of ${p}:`);
+        try {
+          const files = fs.readdirSync(p);
+          console.log(`  ${files.join(', ')}`);
+        } catch (e) {
+          console.log(`  Could not read directory: ${e.message}`);
+        }
+      }
+      return { path: p, exists };
     } catch (err) {
-      return false;
+      console.log(`- ${p}: ❌ Error checking path: ${err.message}`);
+      return { path: p, exists: false };
     }
   });
 
-  if (frontendPath) {
-    console.log("Serving static files from:", frontendPath);
+  // Find the first existing path
+  const validPath = pathChecks.find(p => p.exists);
+
+  if (validPath) {
+    const frontendPath = validPath.path;
+    console.log(`\n✅ Serving static files from: ${frontendPath}\n`);
+    
+    // Serve static files
     app.use(express.static(frontendPath));
-    app.get("*", (req, res) => {
-      res.sendFile(path.join(frontendPath, "index.html"));
+    
+    // Handle all other routes by serving index.html
+    app.get('*', (req, res) => {
+      const indexPath = path.join(frontendPath, 'index.html');
+      console.log(`Serving index.html from: ${indexPath}`);
+      
+      // Check if file exists before sending
+      if (fs.existsSync(indexPath)) {
+        res.sendFile(indexPath);
+      } else {
+        console.error(`❌ index.html not found at: ${indexPath}`);
+        res.status(500).send('Frontend files not found. Please check the build process.');
+      }
     });
   } else {
-    console.error("Could not find frontend files in any of these locations:", possiblePaths);
+    console.error('\n❌ Could not find frontend files in any of these locations:', possiblePaths);
+    
+    // Create a basic error route so we know the backend is running
+    app.get('*', (req, res) => {
+      res.status(500).send(`
+        <h1>Backend is running, but frontend files not found</h1>
+        <p>Checked the following locations:</p>
+        <ul>
+          ${possiblePaths.map(p => `<li>${p}</li>`).join('')}
+        </ul>
+        <p>Please check the build logs for more information.</p>
+      `);
+    });
   }
 }
 server.listen(PORT, () => {

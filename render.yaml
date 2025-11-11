@@ -3,23 +3,46 @@ services:
     name: chatty-app
     env: node
     buildCommand: |
+      # Debug: Show current directory and contents
+      echo "=== Current directory: $(pwd) ==="
+      ls -la
+      
       # Install root dependencies
-      npm install
+      echo "=== Installing root dependencies ==="
+      npm install --verbose || echo "Root dependencies installation failed"
       
-      # Install frontend dependencies including Vite as dev dependency
-      cd frontend && npm install --include=dev
+      # Install frontend dependencies
+      echo "=== Installing frontend dependencies ==="
+      cd frontend
+      npm install --include=dev --verbose || echo "Frontend dependencies installation failed"
       
-      # Build the frontend to the dist directory
-      npx vite build --outDir ../backend/public
+      # Build the frontend
+      echo "=== Building frontend ==="
+      npx vite build --outDir ../backend/public || (echo "Frontend build failed" && exit 1)
+      
+      # Verify frontend build
+      echo "=== Verifying frontend build ==="
+      ls -la ../backend/public || echo "Frontend build directory not found"
       
       # Install backend dependencies
-      cd ../backend && npm install
+      echo "=== Installing backend dependencies ==="
+      cd ../backend
+      npm install --verbose || echo "Backend dependencies installation failed"
       
-      # Create a symlink to make sure the frontend files are accessible
-      ln -sf $(pwd)/public /opt/render/frontend/dist
+      # Create necessary directories and copy files
+      echo "=== Setting up file structure ==="
+      mkdir -p /opt/render/frontend
+      cp -r public /opt/render/frontend/dist || echo "Failed to copy frontend files"
+      
+      # Verify files were copied
+      echo "=== Verifying copied files ==="
+      ls -la /opt/render/frontend/dist || echo "Failed to list copied files"
       
       # Install production dependencies
-      npm ci --only=production
+      echo "=== Installing production dependencies ==="
+      npm ci --only=production --verbose || echo "Production dependencies installation failed"
+      
+      echo "=== Build completed ==="
     startCommand: npm start
     envVars:
       - key: NODE_ENV
