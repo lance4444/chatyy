@@ -7,16 +7,19 @@ services:
       npm install
       
       # Install frontend dependencies including Vite as dev dependency
-      cd frontend && npm install --include=dev && cd ..
+      cd frontend && npm install --include=dev
+      
+      # Build the frontend to the dist directory
+      npx vite build --outDir ../backend/public
       
       # Install backend dependencies
-      cd backend && npm install && cd ..
+      cd ../backend && npm install
       
-      # Build the frontend
-      cd frontend && npx vite build && cd ..
+      # Create a symlink to make sure the frontend files are accessible
+      ln -sf $(pwd)/public /opt/render/frontend/dist
       
-      # Install production dependencies for the backend
-      cd backend && npm ci --only=production && cd ..
+      # Install production dependencies
+      npm ci --only=production
     startCommand: npm start
     envVars:
       - key: NODE_ENV
