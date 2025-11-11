@@ -24,11 +24,15 @@ app.use(
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
 
+// In production, serve static files from the frontend/dist directory
 if (process.env.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "../../frontend/dist")));
-
+  const frontendPath = path.join(__dirname, "..", "..", "frontend", "dist");
+  
+  console.log("Serving static files from:", frontendPath);
+  
+  app.use(express.static(frontendPath));
   app.get("*", (req, res) => {
-    res.sendFile(path.join(__dirname, "../../frontend/dist/index.html"));
+    res.sendFile(path.join(frontendPath, "index.html"));
   });
 }
 server.listen(PORT, () => {
